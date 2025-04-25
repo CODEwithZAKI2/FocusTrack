@@ -63,11 +63,11 @@ FocusTrack is a productivity app designed to help users manage their tasks, trac
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-username/taskflow.git
+   git clone https://github.com/CODEwithZAKI2/FocusTrack.git
    ```
 2. Navigate to the project directory:
    ```bash
-   cd taskflow
+   cd FocusTrack-main
    ```
 3. Install dependencies:
    ```bash
