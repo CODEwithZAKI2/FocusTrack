@@ -21,9 +21,8 @@ FocusTrack is a productivity app designed to help users manage their tasks, trac
 - Maintain a personal journal to record thoughts and ideas.
 - Simple and intuitive interface for journaling.
 
-### 4. **Book Tracking**
-- Keep track of books you are reading or plan to read.
-- Organize books into categories for better management.
+### 4. **Book Reader**
+- You can upload the books you want to read, and you can read it inside the app.
 
 ### 5. **User Profile**
 - View and update your profile information.
@@ -63,11 +62,11 @@ FocusTrack is a productivity app designed to help users manage their tasks, trac
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-username/taskflow.git
+   git clone https://github.com/CODEwithZAKI2/FocusTrack.git
    ```
 2. Navigate to the project directory:
    ```bash
-   cd taskflow
+   cd FocusTrack-main
    ```
 3. Install dependencies:
    ```bash
