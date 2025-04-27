@@ -6,6 +6,54 @@ import 'package:motion_toast/motion_toast.dart'; // Import Motion Toast
 import '../database/database_helper.dart';
 import 'pomodoro_timer_screen.dart'; // Import PomodoroTimerScreen
 
+class TaskSearchDelegate extends SearchDelegate<Map<String, dynamic>?> {
+  final List<Map<String, dynamic>> tasks;
+
+  TaskSearchDelegate(this.tasks);
+
+  @override
+  List<Widget>? buildActions(BuildContext context) => [
+        IconButton(
+          icon: const Icon(Icons.clear),
+          onPressed: () {
+            query = '';
+          },
+        ),
+      ];
+
+  @override
+  Widget? buildLeading(BuildContext context) => IconButton(
+        icon: const Icon(Icons.arrow_back),
+        onPressed: () => close(context, null),
+      );
+
+  @override
+  Widget buildResults(BuildContext context) => _buildResultsOrSuggestions(context);
+
+  @override
+  Widget buildSuggestions(BuildContext context) => _buildResultsOrSuggestions(context);
+
+  Widget _buildResultsOrSuggestions(BuildContext context) {
+    final filteredTasks = tasks
+        .where((task) => task['title'].toString().toLowerCase().contains(query.toLowerCase()))
+        .toList();
+
+    return ListView.builder(
+      itemCount: filteredTasks.length,
+      itemBuilder: (context, index) {
+        final task = filteredTasks[index];
+        return ListTile(
+          title: Text(task['title']),
+          subtitle: Text(task['description'] ?? ''),
+          onTap: () {
+            close(context, task);
+          },
+        );
+      },
+    );
+  }
+}
+
 class TaskScreen extends StatefulWidget {
   final String userId; // Pass the logged-in user's ID
   const TaskScreen({super.key, required this.userId});
@@ -18,11 +66,19 @@ class _TaskScreenState extends State<TaskScreen> with SingleTickerProviderStateM
   List<Map<String, dynamic>> _pendingTasks = [];
   List<Map<String, dynamic>> _completedTasks = [];
   Map<int, List<Map<String, dynamic>>> _pomodoroSessions = {}; // Map task ID to its Pomodoro sessions
+  late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this); // Initialize TabController
     _loadTasks();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose(); // Dispose of TabController
+    super.dispose();
   }
 
   Future<void> _loadTasks() async {
@@ -202,7 +258,13 @@ class _TaskScreenState extends State<TaskScreen> with SingleTickerProviderStateM
                   : null), // Gradient already applied for pending tasks in light mode
           borderRadius: BorderRadius.circular(16),
           boxShadow: isDarkMode
-              ? [] // No shadow in dark mode
+              ? [
+                BoxShadow(
+                    color: Colors.red.withOpacity(0.5),
+                    blurRadius: 6,
+                    offset: const Offset(0, 3),
+                  ),
+              ] // Red shadow in dark mode
               : [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.1),
@@ -477,16 +539,34 @@ class _TaskScreenState extends State<TaskScreen> with SingleTickerProviderStateM
         appBar: AppBar(
           title: const Text('Tasks'),
           bottom: TabBar(
+            controller: _tabController, // Use the manually created TabController
             indicatorColor: Colors.deepPurple,
             labelColor: Colors.deepPurple,
             unselectedLabelColor: Colors.grey,
             labelStyle: const TextStyle(fontWeight: FontWeight.bold),
             tabs: const [
-              Tab(text: 'Pending Tasks', icon: Icon(Icons.format_list_bulleted_outlined),),
-              Tab(text: 'Completed Tasks', icon: Icon(Icons.check_circle),),
+              Tab(text: 'Pending Tasks', icon: Icon(Icons.format_list_bulleted_outlined)),
+              Tab(text: 'Completed Tasks', icon: Icon(Icons.check_circle)),
             ],
           ),
           actions: [
+            IconButton(
+              icon: const Icon(Icons.search),
+              tooltip: 'Search Tasks',
+              onPressed: () async {
+                final selectedTask = await showSearch<Map<String, dynamic>?>(
+                  context: context,
+                  delegate: TaskSearchDelegate(_pendingTasks + _completedTasks),
+                );
+
+                if (selectedTask != null) {
+                  final isCompleted = _completedTasks.contains(selectedTask);
+                  setState(() {
+                    _tabController.index = isCompleted ? 1 : 0; // Switch to Completed or Pending tab
+                  });
+                }
+              },
+            ),
             Padding(
               padding: const EdgeInsets.only(right: 16.0), // Add margin from the right
               child: IconButton(
@@ -498,6 +578,7 @@ class _TaskScreenState extends State<TaskScreen> with SingleTickerProviderStateM
           ],
         ),
         body: TabBarView(
+          controller: _tabController, // Use the manually created TabController
           children: [
             // Tab 1: Pending Tasks
             _pendingTasks.isEmpty
