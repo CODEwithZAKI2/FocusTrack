@@ -363,6 +363,7 @@ class _TaskScreenState extends State<TaskScreen> with SingleTickerProviderStateM
   }
 
   void _showTaskDetailsBottomSheet(Map<String, dynamic> task) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -382,7 +383,7 @@ class _TaskScreenState extends State<TaskScreen> with SingleTickerProviderStateM
                     children: [
                       Text(
                         DateFormat('d').format(DateTime.parse(task['created_at'] ?? DateTime.now().toIso8601String())), // Display the day only
-                        style: const TextStyle(fontSize: 28, color: Colors.black),
+                        style: TextStyle(fontSize: 28, color: isDarkMode ? Colors.white : Colors.black),
                       ),
                       const SizedBox(width: 16),
                       Column(
@@ -391,11 +392,11 @@ class _TaskScreenState extends State<TaskScreen> with SingleTickerProviderStateM
                         children: [
                           Text(
                             DateFormat('MMM').format(DateTime.parse(task['created_at'] ?? DateTime.now().toIso8601String())), // Display the month only
-                            style: const TextStyle(fontSize: 16, color: Colors.black),
+                            style: TextStyle(fontSize: 16, color: isDarkMode ? Colors.white : Colors.black),
                           ),
                           Text(
                             DateFormat('EEEE').format(DateTime.parse(task['created_at'] ?? DateTime.now().toIso8601String())), // Display the day name
-                            style: const TextStyle(fontSize: 16, color: Colors.black),
+                            style: TextStyle(fontSize: 16, color: isDarkMode ? Colors.white : Colors.black),
                           ),
                         ],
                       ),
