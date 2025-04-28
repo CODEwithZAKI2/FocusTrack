@@ -231,132 +231,145 @@ class _TaskScreenState extends State<TaskScreen> with SingleTickerProviderStateM
     final colorScheme = Theme.of(context).colorScheme;
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
-    return GestureDetector(
-      onTap: () => _toggleTaskStatus(task['id'], !isCompleted), // Toggle task status on tap
-      onLongPress: () => _showTaskDialog( // Show edit dialog on long press
-        id: task['id'],
-        currentTitle: task['title'],
-        currentDescription: task['description'],
+    return Dismissible(
+      key: Key(task['id'].toString()), // Unique key for each task
+      direction: isCompleted ? DismissDirection.none : DismissDirection.startToEnd, // Allow swipe only for pending tasks
+      onDismissed: (direction) {
+        _toggleTaskStatus(task['id'], true); // Mark as completed
+      },
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.symmetric(horizontal: 20.0),
+        color: Colors.green, // Background color for swipe action
+        child: const Icon(Icons.check, color: Colors.white, size: 30), // Check icon
       ),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        margin: const EdgeInsets.symmetric(vertical: 8),
-        decoration: BoxDecoration(
-          gradient: isCompleted
-              ? null // No gradient for completed tasks
-              : isDarkMode
-                  ? null // No gradient in dark mode
-                  : const LinearGradient( // Gradient for pending tasks in light mode
-                      colors: [Color(0xFFB3E5FC), Color(0xFF81D4FA)], // Light blue gradient
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-          color: isDarkMode
-              ? Colors.black // Dark mode: Use black for both pending and completed tasks
-              : (isCompleted
-                  ? Colors.green[100] // Light mode: Use original green color for completed tasks
-                  : null), // Gradient already applied for pending tasks in light mode
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: isDarkMode
-              ? [
-                BoxShadow(
-                    color: Colors.red.withOpacity(0.5),
-                    blurRadius: 6,
-                    offset: const Offset(0, 3),
-                  ),
-              ] // Red shadow in dark mode
-              : [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 6,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
+      child: GestureDetector(
+        // onTap: () => _toggleTaskStatus(task['id'], !isCompleted), // Toggle task status on tap
+        onLongPress: () => _showTaskDialog( // Show edit dialog on long press
+          id: task['id'],
+          currentTitle: task['title'],
+          currentDescription: task['description'],
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    isCompleted ? Icons.check_circle : Icons.radio_button_unchecked,
-                    color: isCompleted
-                        ? (isDarkMode ? Colors.greenAccent : Colors.green)
-                        : (isDarkMode ? Colors.blueAccent : Colors.blue),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      task['title'],
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 18,
-                        color: isDarkMode ? Colors.white : Colors.black87,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          margin: const EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(
+            gradient: isCompleted
+                ? null // No gradient for completed tasks
+                : isDarkMode
+                    ? null // No gradient in dark mode
+                    : const LinearGradient( // Gradient for pending tasks in light mode
+                        colors: [Color(0xFFB3E5FC), Color(0xFF81D4FA)], // Light blue gradient
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+            color: isDarkMode
+                ? Colors.black // Dark mode: Use black for both pending and completed tasks
+                : (isCompleted
+                    ? Colors.green[100] // Light mode: Use original green color for completed tasks
+                    : null), // Gradient already applied for pending tasks in light mode
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: isDarkMode
+                ? [
+                  BoxShadow(
+                      color: Colors.red.withOpacity(0.5),
+                      blurRadius: 6,
+                      offset: const Offset(0, 3),
+                    ),
+                ] // Red shadow in dark mode
+                : [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 6,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      isCompleted ? Icons.check_circle : Icons.radio_button_unchecked,
+                      color: isCompleted
+                          ? (isDarkMode ? Colors.greenAccent : Colors.green)
+                          : (isDarkMode ? Colors.blueAccent : Colors.blue),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        task['title'],
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 18,
+                          color: isDarkMode ? Colors.white : Colors.black87,
+                        ),
                       ),
                     ),
-                  ),
-                  if (!isCompleted) // Show delete and timer icons only for pending tasks
-                    Row(
-                      children: [
-                        IconButton(
-                          iconSize: 30,
-                          icon: Icon(Icons.timer_outlined, color: isDarkMode ? Colors.greenAccent : Colors.green),
-                          tooltip: 'Start Pomodoro Timer',
-                          onPressed: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => Scaffold(
-                                body: PomodoroTimerScreen(taskId: task['id']),
-                                bottomNavigationBar: CurvedNavigationBar(
-                                  backgroundColor: Colors.transparent,
-                                  color: Theme.of(context).primaryColor,
-                                  buttonBackgroundColor: Theme.of(context).primaryColor,
-                                  height: 60,
-                                  items: const [
-                                    Icon(Icons.task, size: 30, color: Colors.white), // Tasks
-                                    Icon(Icons.book, size: 30, color: Colors.white), // Journal
-                                    Icon(Icons.menu_book, size: 30, color: Colors.white), // Books
-                                    Icon(Icons.person, size: 30, color: Colors.white), // Profile
-                                  ],
-                                  onTap: (index) {
-                                    // Handle navigation logic here if needed
-                                  },
+                    if (!isCompleted) // Show delete and timer icons only for pending tasks
+                      Row(
+                        children: [
+                          IconButton(
+                            iconSize: 30,
+                            icon: Icon(Icons.timer_outlined, color: isDarkMode ? Colors.greenAccent : Colors.green),
+                            tooltip: 'Start Pomodoro Timer',
+                            onPressed: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => Scaffold(
+                                  body: PomodoroTimerScreen(taskId: task['id']),
+                                  bottomNavigationBar: CurvedNavigationBar(
+                                    backgroundColor: Colors.transparent,
+                                    color: Theme.of(context).primaryColor,
+                                    buttonBackgroundColor: Theme.of(context).primaryColor,
+                                    height: 60,
+                                    items: const [
+                                      Icon(Icons.task, size: 30, color: Colors.white), // Tasks
+                                      Icon(Icons.book, size: 30, color: Colors.white), // Journal
+                                      Icon(Icons.menu_book, size: 30, color: Colors.white), // Books
+                                      Icon(Icons.person, size: 30, color: Colors.white), // Profile
+                                    ],
+                                    onTap: (index) {
+                                      // Handle navigation logic here if needed
+                                    },
+                                  ),
                                 ),
                               ),
-                            ),
-                          ).then((_) => _loadTasks()),
-                        ),
-                        IconButton(
-                          iconSize: 30,
-                          icon: Icon(Icons.delete, color: isDarkMode ? Colors.redAccent : Colors.red),
-                          tooltip: 'Delete Task',
-                          onPressed: () => _deleteTask(task['id']),
-                        ),
-                      ],
+                            ).then((_) => _loadTasks()),
+                          ),
+                          IconButton(
+                            iconSize: 30,
+                            icon: Icon(Icons.delete, color: isDarkMode ? Colors.redAccent : Colors.red),
+                            tooltip: 'Delete Task',
+                            onPressed: () => _deleteTask(task['id']),
+                          ),
+                        ],
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Padding(
+                  padding: const EdgeInsets.only(left: 30.0),
+                  child: Text(
+                    task['description'] ?? '',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w400,
+                      fontSize: 18,
+                      color: isDarkMode ? Colors.white70 : Colors.black,
                     ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Padding(
-                padding: const EdgeInsets.only(left: 30.0),
-                child: Text(
-                  task['description'] ?? '',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w400,
-                    fontSize: 18,
-                    color: isDarkMode ? Colors.white70 : Colors.black,
                   ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              const Divider(), // Divider before Pomodoro sessions
-              const SizedBox(height: 8),
-              _buildPomodoroSessions(task['id']),
-              const SizedBox(height: 16),
-              _buildDistractionLogs(task['id']), // Add distraction logs
-            ],
+                const SizedBox(height: 16),
+                const Divider(), // Divider before Pomodoro sessions
+                const SizedBox(height: 8),
+                _buildPomodoroSessions(task['id']),
+                const SizedBox(height: 16),
+                _buildDistractionLogs(task['id']), // Add distraction logs
+              ],
+            ),
           ),
         ),
       ),
