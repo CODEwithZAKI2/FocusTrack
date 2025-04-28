@@ -171,6 +171,7 @@ class _TaskScreenState extends State<TaskScreen> with SingleTickerProviderStateM
       'description': description,
       'estimated_pomodoros': 0,
       'is_done': 0,
+      'created_at': id == null ? DateTime.now().toIso8601String() : null, // Populate created_at for new tasks
     };
 
     try {
@@ -183,7 +184,7 @@ class _TaskScreenState extends State<TaskScreen> with SingleTickerProviderStateM
         // Update an existing task
         await db?.update(
           'tasks',
-          task,
+          task..remove('created_at'), // Remove created_at for updates
           where: 'id = ? AND user_id = ?',
           whereArgs: [id, widget.userId],
         );
@@ -228,7 +229,6 @@ class _TaskScreenState extends State<TaskScreen> with SingleTickerProviderStateM
   }
 
   Widget _buildTaskCard(Map<String, dynamic> task, bool isCompleted) {
-    final colorScheme = Theme.of(context).colorScheme;
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Dismissible(
@@ -244,12 +244,7 @@ class _TaskScreenState extends State<TaskScreen> with SingleTickerProviderStateM
         child: const Icon(Icons.check, color: Colors.white, size: 30), // Check icon
       ),
       child: GestureDetector(
-        // onTap: () => _toggleTaskStatus(task['id'], !isCompleted), // Toggle task status on tap
-        onLongPress: () => _showTaskDialog( // Show edit dialog on long press
-          id: task['id'],
-          currentTitle: task['title'],
-          currentDescription: task['description'],
-        ),
+        onTap: () => _showTaskDetailsBottomSheet(task), // Show bottom sheet on tap
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 300),
           margin: const EdgeInsets.symmetric(vertical: 8),
@@ -287,20 +282,20 @@ class _TaskScreenState extends State<TaskScreen> with SingleTickerProviderStateM
           ),
           child: Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
               children: [
-                Row(
-                  children: [
-                    Icon(
-                      isCompleted ? Icons.check_circle : Icons.radio_button_unchecked,
-                      color: isCompleted
-                          ? (isDarkMode ? Colors.greenAccent : Colors.green)
-                          : (isDarkMode ? Colors.blueAccent : Colors.blue),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
+                Icon(
+                  isCompleted ? Icons.check_circle : Icons.radio_button_unchecked,
+                  color: isCompleted
+                      ? (isDarkMode ? Colors.greenAccent : Colors.green)
+                      : (isDarkMode ? Colors.blueAccent : Colors.blue),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
                         task['title'],
                         style: TextStyle(
                           fontWeight: FontWeight.w600,
@@ -308,71 +303,156 @@ class _TaskScreenState extends State<TaskScreen> with SingleTickerProviderStateM
                           color: isDarkMode ? Colors.white : Colors.black87,
                         ),
                       ),
-                    ),
-                    if (!isCompleted) // Show delete and timer icons only for pending tasks
-                      Row(
-                        children: [
-                          IconButton(
-                            iconSize: 30,
-                            icon: Icon(Icons.timer_outlined, color: isDarkMode ? Colors.greenAccent : Colors.green),
-                            tooltip: 'Start Pomodoro Timer',
-                            onPressed: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => Scaffold(
-                                  body: PomodoroTimerScreen(taskId: task['id']),
-                                  bottomNavigationBar: CurvedNavigationBar(
-                                    backgroundColor: Colors.transparent,
-                                    color: Theme.of(context).primaryColor,
-                                    buttonBackgroundColor: Theme.of(context).primaryColor,
-                                    height: 60,
-                                    items: const [
-                                      Icon(Icons.task, size: 30, color: Colors.white), // Tasks
-                                      Icon(Icons.book, size: 30, color: Colors.white), // Journal
-                                      Icon(Icons.menu_book, size: 30, color: Colors.white), // Books
-                                      Icon(Icons.person, size: 30, color: Colors.white), // Profile
-                                    ],
-                                    onTap: (index) {
-                                      // Handle navigation logic here if needed
-                                    },
-                                  ),
-                                ),
-                              ),
-                            ).then((_) => _loadTasks()),
-                          ),
-                          IconButton(
-                            iconSize: 30,
-                            icon: Icon(Icons.delete, color: isDarkMode ? Colors.redAccent : Colors.red),
-                            tooltip: 'Delete Task',
-                            onPressed: () => _deleteTask(task['id']),
-                          ),
-                        ],
+                      const SizedBox(height: 4),
+                      Text(
+                        task['description'] ?? '',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w400,
+                          fontSize: 16,
+                          color: isDarkMode ? Colors.white70 : Colors.black54,
+                        ),
                       ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Padding(
-                  padding: const EdgeInsets.only(left: 30.0),
-                  child: Text(
-                    task['description'] ?? '',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w400,
-                      fontSize: 18,
-                      color: isDarkMode ? Colors.white70 : Colors.black,
-                    ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 16),
-                const Divider(), // Divider before Pomodoro sessions
-                const SizedBox(height: 8),
-                _buildPomodoroSessions(task['id']),
-                const SizedBox(height: 16),
-                _buildDistractionLogs(task['id']), // Add distraction logs
+                if (!isCompleted) // Show delete and timer icons only for pending tasks
+                  Row(
+                    children: [
+                      IconButton(
+                        iconSize: 30,
+                        icon: Icon(Icons.timer_outlined, color: isDarkMode ? Colors.greenAccent : Colors.green),
+                        tooltip: 'Start Pomodoro Timer',
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => Scaffold(
+                              body: PomodoroTimerScreen(taskId: task['id']),
+                              bottomNavigationBar: CurvedNavigationBar(
+                                backgroundColor: Colors.transparent,
+                                color: Theme.of(context).primaryColor,
+                                buttonBackgroundColor: Theme.of(context).primaryColor,
+                                height: 60,
+                                items: const [
+                                  Icon(Icons.task, size: 30, color: Colors.white), // Tasks
+                                  Icon(Icons.book, size: 30, color: Colors.white), // Journal
+                                  Icon(Icons.menu_book, size: 30, color: Colors.white), // Books
+                                  Icon(Icons.person, size: 30, color: Colors.white), // Profile
+                                ],
+                                onTap: (index) {
+                                  // Handle navigation logic here if needed
+                                },
+                              ),
+                            ),
+                          ),
+                        ).then((_) => _loadTasks()),
+                      ),
+                      IconButton(
+                        iconSize: 30,
+                        icon: Icon(Icons.delete, color: isDarkMode ? Colors.redAccent : Colors.red),
+                        tooltip: 'Delete Task',
+                        onPressed: () => _deleteTask(task['id']),
+                      ),
+                    ],
+                  ),
               ],
             ),
           ),
         ),
       ),
+    );
+  }
+
+  void _showTaskDetailsBottomSheet(Map<String, dynamic> task) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return Stack(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center, // Align items at the center
+                    children: [
+                      Text(
+                        DateFormat('d').format(DateTime.parse(task['created_at'] ?? DateTime.now().toIso8601String())), // Display the day only
+                        style: const TextStyle(fontSize: 28, color: Colors.black),
+                      ),
+                      const SizedBox(width: 16),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start, // Align text to the start
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            DateFormat('MMM').format(DateTime.parse(task['created_at'] ?? DateTime.now().toIso8601String())), // Display the month only
+                            style: const TextStyle(fontSize: 16, color: Colors.black),
+                          ),
+                          Text(
+                            DateFormat('EEEE').format(DateTime.parse(task['created_at'] ?? DateTime.now().toIso8601String())), // Display the day name
+                            style: const TextStyle(fontSize: 16, color: Colors.black),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start, // Align text to the start
+                          mainAxisSize: MainAxisSize.min, // Minimize height space
+                          children: [
+                            Text(
+                              task['title'],
+                              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 4), // Minimal space between title and description
+                            Text(
+                              task['description'] ?? '',
+                              style: const TextStyle(fontSize: 16, color: Colors.grey),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  const Divider(thickness: 1, color: Colors.grey), // Divider between sections
+                  const SizedBox(height: 16),
+                  _buildPomodoroSessions(task['id']), // Display Pomodoro sessions
+                  const SizedBox(height: 16),
+                  _buildDistractionLogs(task['id']), // Display distraction logs
+                  const SizedBox(height: 16),
+                ],
+              ),
+            ),
+            Positioned(
+              bottom: 16,
+              right: 16,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context); // Close the bottom sheet
+                  _toggleTaskStatus(task['id'], task['is_done'] == 0); // Toggle task status
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: task['is_done'] == 0 ? Colors.green : Colors.red, // Green for "Done", Red for "Unmark"
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                child: Text(
+                  task['is_done'] == 0 ? 'Done' : 'Unmark', // Change label based on task status
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -428,7 +508,10 @@ class _TaskScreenState extends State<TaskScreen> with SingleTickerProviderStateM
   Widget _buildPomodoroSessions(int taskId) {
     final sessions = _pomodoroSessions[taskId] ?? [];
     if (sessions.isEmpty) {
-      return const SizedBox.shrink();
+      return const Text(
+        'No Pomodoro sessions logged.',
+        style: TextStyle(fontSize: 18, color: Colors.grey),
+      );
     }
 
     final totalPomodoros = sessions.length;

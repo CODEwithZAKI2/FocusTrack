@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:taskflow/database/database_helper.dart';
 import 'screens/splash_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/home_screen.dart';
@@ -9,7 +10,8 @@ import 'screens/settings_screen.dart'; // Import SettingsScreen
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
+  // await DatabaseHelper().deleteDatabaseFile();
+  await DatabaseHelper().printTasksTableSchema(); // Print the schema for debugging
   // Initialize sqflite for desktop or web
   if (DatabaseFactory == null) {
     sqfliteFfiInit();

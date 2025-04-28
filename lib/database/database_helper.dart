@@ -46,6 +46,7 @@ class DatabaseHelper {
             description TEXT,
             estimated_pomodoros INTEGER NOT NULL,
             is_done INTEGER NOT NULL DEFAULT 0,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, -- Ensure created_at column exists
             FOREIGN KEY(user_id) REFERENCES users(id)
           )
         ''');
@@ -68,18 +69,19 @@ class DatabaseHelper {
             FOREIGN KEY(task_id) REFERENCES tasks(id),
             FOREIGN KEY(session_id) REFERENCES pomodoro_sessions(id)
           )
-        ''');        
+        ''');
       },
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 3) {
-          // Check if the session_id column already exists
-          final existingColumns = await db.rawQuery('PRAGMA table_info(distraction_logs)');
-          final columnExists = existingColumns.any((column) => column['name'] == 'session_id');
+          // Check if the created_at column already exists
+          final existingColumns = await db.rawQuery('PRAGMA table_info(tasks)');
+          final columnExists = existingColumns.any((column) => column['name'] == 'created_at');
 
           if (!columnExists) {
             await db.execute('''
-              ALTER TABLE distraction_logs ADD COLUMN session_id INTEGER;
+              ALTER TABLE tasks ADD COLUMN created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP;
             ''');
+            print('Added created_at column to tasks table.');
           }
         }
       },
@@ -130,6 +132,12 @@ class DatabaseHelper {
     final db = await database;
     final schema = await db?.rawQuery('PRAGMA table_info(users)');
     print('Users Table Schema: $schema');
+  }
+
+  Future<void> printTasksTableSchema() async {
+    final db = await database;
+    final schema = await db?.rawQuery('PRAGMA table_info(tasks)');
+    print('Tasks Table Schema: $schema');
   }
 
   Future<void> saveDistractionLog({
