@@ -11,7 +11,9 @@ import 'screens/settings_screen.dart'; // Import SettingsScreen
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // await DatabaseHelper().deleteDatabaseFile();
-  await DatabaseHelper().printTasksTableSchema(); // Print the schema for debugging
+  // await DatabaseHelper().printTasksTableSchema(); // Print the schema for debugging
+  // await DatabaseHelper().deleteDatabaseFile(); // Reset the database
+  await DatabaseHelper().printJournalTableSchema(); // Print the schema for debugging
   // Initialize sqflite for desktop or web
   if (DatabaseFactory == null) {
     sqfliteFfiInit();

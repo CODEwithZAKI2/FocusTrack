@@ -70,18 +70,30 @@ class DatabaseHelper {
             FOREIGN KEY(session_id) REFERENCES pomodoro_sessions(id)
           )
         ''');
+        await db.execute('''
+          CREATE TABLE journal_entries (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            content TEXT NOT NULL,
+            timestamp TEXT NOT NULL
+          )
+        ''');
       },
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 3) {
-          // Check if the created_at column already exists
-          final existingColumns = await db.rawQuery('PRAGMA table_info(tasks)');
-          final columnExists = existingColumns.any((column) => column['name'] == 'created_at');
+          // Check if the journal_entries table already exists
+          final existingTables = await db.rawQuery('SELECT name FROM sqlite_master WHERE type="table"');
+          final tableExists = existingTables.any((table) => table['name'] == 'journal_entries');
 
-          if (!columnExists) {
+          if (!tableExists) {
             await db.execute('''
-              ALTER TABLE tasks ADD COLUMN created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP;
+              CREATE TABLE journal_entries (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                title TEXT NOT NULL,
+                content TEXT NOT NULL,
+                timestamp TEXT NOT NULL
+              )
             ''');
-            print('Added created_at column to tasks table.');
           }
         }
       },
@@ -138,6 +150,12 @@ class DatabaseHelper {
     final db = await database;
     final schema = await db?.rawQuery('PRAGMA table_info(tasks)');
     print('Tasks Table Schema: $schema');
+  }
+
+  Future<void> printJournalTableSchema() async {
+    final db = await database;
+    final schema = await db?.rawQuery('PRAGMA table_info(journal_entries)');
+    print('Journal Entries Table Schema: $schema');
   }
 
   Future<void> saveDistractionLog({
