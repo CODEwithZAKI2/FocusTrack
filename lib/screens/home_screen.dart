@@ -20,7 +20,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final List<Widget> _screens = [
     const TaskScreen(userId: ''), // Placeholder for TaskScreen
     const JournalScreen(), // Placeholder for Journal
-    Center(child: Text('Books')), // Placeholder for Books
+    Center(child: Text('Dashboards')), // Placeholder for Dashboards
     const ProfileScreen(), // Placeholder for Profile
   ];
 
@@ -62,7 +62,7 @@ class _HomeScreenState extends State<HomeScreen> {
         items: const [
           Icon(Icons.task, size: 30, color: Colors.white), // Tasks
           Icon(Icons.book, size: 30, color: Colors.white), // Journal
-          Icon(Icons.space_dashboard_rounded, size: 30, color: Colors.white), // Books
+          Icon(Icons.analytics_outlined, size: 30, color: Colors.white), // Dashboard
           Icon(Icons.person, size: 30, color: Colors.white), // Profile
         ],
         index: _currentIndex,
