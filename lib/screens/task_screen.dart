@@ -362,96 +362,262 @@ class _TaskScreenState extends State<TaskScreen> with SingleTickerProviderStateM
     );
   }
 
+  void _showTaskDialog({int? id, String? currentTitle, String? currentDescription}) {
+    final titleController = TextEditingController(text: currentTitle);
+    final descriptionController = TextEditingController(text: currentDescription);
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return Dialog(
+          backgroundColor: isDark ? const Color(0xFF232336) : Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.task_alt_rounded, size: 48, color: Colors.deepPurple.shade300),
+                  const SizedBox(height: 10),
+                  Text(
+                    id == null ? 'Add New Task' : 'Edit Task',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.deepPurple,
+                      letterSpacing: 0.2,
+                    ),
+                  ),
+                  const SizedBox(height: 22),
+                  TextField(
+                    controller: titleController,
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                    decoration: InputDecoration(
+                      labelText: 'Title',
+                      labelStyle: TextStyle(color: Colors.deepPurple.shade300),
+                      filled: true,
+                      fillColor: isDark ? Colors.deepPurple.shade900.withOpacity(0.12) : Colors.deepPurple.shade50,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  TextField(
+                    controller: descriptionController,
+                    maxLines: 5,
+                    style: const TextStyle(fontSize: 16),
+                    decoration: InputDecoration(
+                      labelText: 'Description',
+                      labelStyle: TextStyle(color: Colors.deepPurple.shade300),
+                      filled: true,
+                      fillColor: isDark ? Colors.deepPurple.shade900.withOpacity(0.12) : Colors.deepPurple.shade50,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    ),
+                  ),
+                  const SizedBox(height: 22),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.deepPurple,
+                          textStyle: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        child: const Text('Cancel'),
+                      ),
+                      ElevatedButton(
+                        onPressed: () {
+                          final title = titleController.text.trim();
+                          final description = descriptionController.text.trim();
+                          if (title.isNotEmpty) {
+                            _addOrUpdateTask(id, title, description);
+                            Navigator.pop(context);
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Title cannot be empty')),
+                            );
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.deepPurple,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                          textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        ),
+                        child: Text(id == null ? 'Add Task' : 'Update'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   void _showTaskDetailsBottomSheet(Map<String, dynamic> task) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (context) {
-        return Stack(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center, // Align items at the center
-                    children: [
-                      Text(
-                        DateFormat('d').format(DateTime.parse(task['created_at'] ?? DateTime.now().toIso8601String())), // Display the day only
-                        style: TextStyle(fontSize: 28, color: isDarkMode ? Colors.white : Colors.black),
+        return DraggableScrollableSheet(
+          initialChildSize: 0.65,
+          minChildSize: 0.5,
+          maxChildSize: 0.95,
+          expand: false,
+          builder: (context, scrollController) {
+            return Container(
+              decoration: BoxDecoration(
+                color: isDarkMode ? const Color(0xFF232336) : Colors.white,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.deepPurple.withOpacity(0.08),
+                    blurRadius: 24,
+                    offset: const Offset(0, -8),
+                  ),
+                ],
+              ),
+              child: SingleChildScrollView(
+                controller: scrollController,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 48,
+                        height: 5,
+                        decoration: BoxDecoration(
+                          color: isDarkMode ? Colors.deepPurple.shade900 : Colors.deepPurple.shade50,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
-                      const SizedBox(width: 16),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start, // Align text to the start
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            DateFormat('MMM').format(DateTime.parse(task['created_at'] ?? DateTime.now().toIso8601String())), // Display the month only
-                            style: TextStyle(fontSize: 16, color: isDarkMode ? Colors.white : Colors.black),
+                    ),
+                    const SizedBox(height: 18),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            color: isDarkMode ? Colors.deepPurple.shade900 : Colors.deepPurple.shade100,
+                            borderRadius: BorderRadius.circular(16),
                           ),
-                          Text(
-                            DateFormat('EEEE').format(DateTime.parse(task['created_at'] ?? DateTime.now().toIso8601String())), // Display the day name
-                            style: TextStyle(fontSize: 16, color: isDarkMode ? Colors.white : Colors.black),
+                          padding: const EdgeInsets.all(12),
+                          child: Icon(
+                            task['is_done'] == 1 ? Icons.check_circle : Icons.radio_button_unchecked,
+                            color: task['is_done'] == 1
+                                ? (isDarkMode ? Colors.greenAccent : Colors.green)
+                                : (isDarkMode ? Colors.blueAccent : Colors.blue),
+                            size: 32,
                           ),
-                        ],
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start, // Align text to the start
-                          mainAxisSize: MainAxisSize.min, // Minimize height space
+                        ),
+                        const SizedBox(width: 18),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                task['title'],
+                                style: TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                  color: isDarkMode ? Colors.deepPurple.shade100 : Colors.deepPurple,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                task['description'] ?? '',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: isDarkMode ? Colors.grey[300] : Colors.grey[700],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
                             Text(
-                              task['title'],
-                              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                              DateFormat('d').format(DateTime.parse(task['created_at'] ?? DateTime.now().toIso8601String())),
+                              style: TextStyle(
+                                fontSize: 28,
+                                color: isDarkMode ? Colors.white : Colors.black,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                            const SizedBox(height: 4), // Minimal space between title and description
                             Text(
-                              task['description'] ?? '',
-                              style: const TextStyle(fontSize: 16, color: Colors.grey),
+                              DateFormat('MMM').format(DateTime.parse(task['created_at'] ?? DateTime.now().toIso8601String())),
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: isDarkMode ? Colors.white70 : Colors.black54,
+                              ),
+                            ),
+                            Text(
+                              DateFormat('EEEE').format(DateTime.parse(task['created_at'] ?? DateTime.now().toIso8601String())),
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: isDarkMode ? Colors.white70 : Colors.black54,
+                              ),
                             ),
                           ],
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  const Divider(thickness: 1, color: Colors.grey), // Divider between sections
-                  const SizedBox(height: 16),
-                  _buildPomodoroSessions(task['id']), // Display Pomodoro sessions
-                  const SizedBox(height: 16),
-                  _buildDistractionLogs(task['id']), // Display distraction logs
-                  const SizedBox(height: 16),
-                ],
-              ),
-            ),
-            Positioned(
-              bottom: 16,
-              right: 16,
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context); // Close the bottom sheet
-                  _toggleTaskStatus(task['id'], task['is_done'] == 0); // Toggle task status
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: task['is_done'] == 0 ? Colors.green : Colors.red, // Green for "Done", Red for "Unmark"
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
+                      ],
+                    ),
+                    const SizedBox(height: 18),
+                    Divider(thickness: 1, color: isDarkMode ? Colors.grey[800] : Colors.grey[300]),
+                    const SizedBox(height: 18),
+                    _buildPomodoroSessions(task['id']),
+                    const SizedBox(height: 18),
+                    _buildDistractionLogs(task['id']),
+                    const SizedBox(height: 18),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            _toggleTaskStatus(task['id'], task['is_done'] == 0);
+                          },
+                          icon: Icon(
+                            task['is_done'] == 0 ? Icons.check : Icons.undo,
+                            color: Colors.white,
+                          ),
+                          label: Text(
+                            task['is_done'] == 0 ? 'Mark as Done' : 'Unmark',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: task['is_done'] == 0 ? Colors.green : Colors.red,
+                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-                child: Text(
-                  task['is_done'] == 0 ? 'Done' : 'Unmark', // Change label based on task status
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
-                ),
               ),
-            ),
-          ],
+            );
+          },
         );
       },
     );
@@ -575,56 +741,6 @@ class _TaskScreenState extends State<TaskScreen> with SingleTickerProviderStateM
           }).toList(),
         ),
       ],
-    );
-  }
-
-  void _showTaskDialog({int? id, String? currentTitle, String? currentDescription}) {
-    final titleController = TextEditingController(text: currentTitle);
-    final descriptionController = TextEditingController(text: currentDescription);
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text(id == null ? 'Add Task' : 'Edit Task'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: titleController,
-                decoration: const InputDecoration(labelText: 'Title'),
-              ),
-              TextField(
-                controller: descriptionController,
-                decoration: const InputDecoration(labelText: 'Description'),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                final title = titleController.text.trim();
-                final description = descriptionController.text.trim();
-                if (title.isNotEmpty) {
-                  _addOrUpdateTask(id, title, description);
-                  Navigator.pop(context);
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Title cannot be empty')),
-                  );
-                }
-              },
-              child: Text(id == null ? 'Add' : 'Update'),
-            ),
-          ],
-        );
-      },
     );
   }
 
