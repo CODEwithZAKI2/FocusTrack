@@ -312,6 +312,7 @@ class _JournalScreenState extends State<JournalScreen> {
                         ),
                       ],
                     ),
+                    
                   ],
                 ),
               ),
@@ -353,6 +354,7 @@ class _JournalScreenState extends State<JournalScreen> {
           : ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
               itemCount: _journalEntries.length,
+              
               itemBuilder: (context, index) {
                 final entry = _journalEntries[index];
                 final date = DateTime.parse(entry['timestamp']);
@@ -372,24 +374,76 @@ class _JournalScreenState extends State<JournalScreen> {
                   children: [
                     if (showDateLabel)
                       Padding(
-                        padding: const EdgeInsets.only(left: 4, bottom: 8, top: 8),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).brightness == Brightness.dark
-                                ? Colors.deepPurple.withOpacity(0.18)
-                                : Colors.deepPurple.withOpacity(0.08),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                          child: Text(
-                            DateFormat('EEEE, MMM d, yyyy').format(date),
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 15,
-                              color: Theme.of(context).brightness == Brightness.dark
-                                  ? Colors.deepPurple.shade100
-                                  : Colors.deepPurple,
-                              letterSpacing: 0.1,
+                        padding: const EdgeInsets.only(left: 4, bottom: 12, top: 8),
+                        child: Center(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              gradient: Theme.of(context).brightness == Brightness.dark
+                                  ? LinearGradient(
+                                      colors: [
+                                        Colors.deepPurple.shade900.withOpacity(0.7),
+                                        Colors.deepPurple.withOpacity(0.22),
+                                      ],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    )
+                                  : LinearGradient(
+                                      colors: [
+                                        Colors.deepPurple.shade50,
+                                        Colors.deepPurple.withOpacity(0.12),
+                                      ],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    ),
+                              borderRadius: BorderRadius.circular(24),
+                              border: Border.all(
+                                color: Theme.of(context).brightness == Brightness.dark
+                                    ? Colors.deepPurple.shade900.withOpacity(0.5)
+                                    : Colors.deepPurple.shade100,
+                                width: 1.3,
+                              ),
+                              boxShadow: [
+                                if (Theme.of(context).brightness == Brightness.light)
+                                  BoxShadow(
+                                    color: Colors.deepPurple.withOpacity(0.08),
+                                    blurRadius: 12,
+                                    offset: const Offset(0, 2),
+                                  ),
+                              ],
+                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.calendar_month_rounded,
+                                  size: 20,
+                                  color: Theme.of(context).brightness == Brightness.dark
+                                      ? Colors.deepPurple.shade100
+                                      : Colors.deepPurple,
+                                ),
+                                const SizedBox(width: 10),
+                                Text(
+                                  DateFormat('EEEE, MMM d, yyyy').format(date),
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 16,
+                                    color: Theme.of(context).brightness == Brightness.dark
+                                        ? Colors.deepPurple.shade100
+                                        : Colors.deepPurple.shade700,
+                                    letterSpacing: 0.3,
+                                    shadows: Theme.of(context).brightness == Brightness.dark
+                                        ? [
+                                            Shadow(
+                                              color: Colors.deepPurple.shade900.withOpacity(0.25),
+                                              blurRadius: 6,
+                                              offset: const Offset(0, 2),
+                                            )
+                                          ]
+                                        : [],
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
@@ -477,18 +531,68 @@ class _JournalScreenState extends State<JournalScreen> {
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                     const SizedBox(height: 10),
-                                    // Date and time
+                                    // Beautiful date style
                                     Row(
                                       children: [
-                                        Icon(Icons.access_time_rounded, size: 16, color: Colors.deepPurple.shade200),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          DateFormat('EEE, MMM d • h:mm a').format(date),
-                                          style: theme.textTheme.labelMedium?.copyWith(
-                                            color: Theme.of(context).brightness == Brightness.dark
-                                                ? Colors.deepPurple.shade200.withOpacity(0.7)
-                                                : Colors.deepPurple.shade200,
-                                            fontWeight: FontWeight.w500,
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                          decoration: BoxDecoration(
+                                            gradient: Theme.of(context).brightness == Brightness.dark
+                                                ? LinearGradient(
+                                                    colors: [
+                                                      Colors.deepPurple.shade900.withOpacity(0.7),
+                                                      Colors.deepPurple.withOpacity(0.22),
+                                                    ],
+                                                    begin: Alignment.topLeft,
+                                                    end: Alignment.bottomRight,
+                                                  )
+                                                : LinearGradient(
+                                                    colors: [
+                                                      Colors.deepPurple.shade50,
+                                                      Colors.deepPurple.withOpacity(0.12),
+                                                    ],
+                                                    begin: Alignment.topLeft,
+                                                    end: Alignment.bottomRight,
+                                                  ),
+                                            borderRadius: BorderRadius.circular(12),
+                                            border: Border.all(
+                                              color: Theme.of(context).brightness == Brightness.dark
+                                                  ? Colors.deepPurple.shade900.withOpacity(0.5)
+                                                  : Colors.deepPurple.shade100,
+                                              width: 1.1,
+                                            ),
+                                          ),
+                                          child: Row(
+                                            children: [
+                                              Icon(
+                                                Icons.access_time_rounded,
+                                                size: 16,
+                                                color: Theme.of(context).brightness == Brightness.dark
+                                                    ? Colors.deepPurple.shade100
+                                                    : Colors.deepPurple,
+                                              ),
+                                              const SizedBox(width: 6),
+                                              Text(
+                                                DateFormat('EEE, MMM d • h:mm a').format(date),
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.w700,
+                                                  fontSize: 13,
+                                                  color: Theme.of(context).brightness == Brightness.dark
+                                                      ? Colors.deepPurple.shade100
+                                                      : Colors.deepPurple.shade700,
+                                                  letterSpacing: 0.2,
+                                                  shadows: Theme.of(context).brightness == Brightness.dark
+                                                      ? [
+                                                          Shadow(
+                                                            color: Colors.deepPurple.shade900.withOpacity(0.18),
+                                                            blurRadius: 4,
+                                                            offset: const Offset(0, 1),
+                                                          )
+                                                        ]
+                                                      : [],
+                                                ),
+                                              ),
+                                            ],
                                           ),
                                         ),
                                       ],
@@ -510,6 +614,7 @@ class _JournalScreenState extends State<JournalScreen> {
                         ),
                       ),
                     ),
+                    const SizedBox(height: 16),
                   ],
                 );
               },
