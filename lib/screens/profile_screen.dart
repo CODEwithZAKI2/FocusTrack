@@ -61,22 +61,7 @@ class ProfileScreen extends StatelessWidget {
                         MaterialPageRoute(
                           builder: (context) => Scaffold(
                             body: const SettingsScreen(),
-                            bottomNavigationBar: CurvedNavigationBar(
-                              index: 3,
-                              backgroundColor: Colors.transparent,
-                              color: Theme.of(context).primaryColor,
-                              buttonBackgroundColor: Theme.of(context).primaryColor,
-                              height: 60,
-                              items: const [
-                                Icon(Icons.task, size: 30, color: Colors.white), // Tasks
-                                Icon(Icons.book, size: 30, color: Colors.white), // Journal
-                                Icon(Icons.menu_book, size: 30, color: Colors.white), // Books
-                                Icon(Icons.person, size: 30, color: Colors.white), // Profile
-                              ],
-                              onTap: (index) {
-                                // Handle navigation logic here if needed
-                              },
-                            ),
+                            
                           ),
                         ),
                       );

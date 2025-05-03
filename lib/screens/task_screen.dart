@@ -1,5 +1,6 @@
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:flutter/material.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:provider/provider.dart'; // Import Provider
 import 'package:intl/intl.dart'; // Import for date formatting
 import 'package:motion_toast/motion_toast.dart'; // Import Motion Toast
@@ -320,35 +321,21 @@ class _TaskScreenState extends State<TaskScreen> with SingleTickerProviderStateM
                     children: [
                       IconButton(
                         iconSize: 30,
-                        icon: Icon(Icons.timer_outlined, color: isDarkMode ? Colors.greenAccent : Colors.green),
+                        icon: Icon(PhosphorIconsBold.timer, color: isDarkMode ? Colors.greenAccent : Colors.green),
                         tooltip: 'Start Pomodoro Timer',
                         onPressed: () => Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (context) => Scaffold(
                               body: PomodoroTimerScreen(taskId: task['id']),
-                              bottomNavigationBar: CurvedNavigationBar(
-                                backgroundColor: Colors.transparent,
-                                color: Theme.of(context).primaryColor,
-                                buttonBackgroundColor: Theme.of(context).primaryColor,
-                                height: 60,
-                                items: const [
-                                  Icon(Icons.task, size: 30, color: Colors.white), // Tasks
-                                  Icon(Icons.book, size: 30, color: Colors.white), // Journal
-                                  Icon(Icons.menu_book, size: 30, color: Colors.white), // Books
-                                  Icon(Icons.person, size: 30, color: Colors.white), // Profile
-                                ],
-                                onTap: (index) {
-                                  // Handle navigation logic here if needed
-                                },
-                              ),
+                              
                             ),
                           ),
                         ).then((_) => _loadTasks()),
                       ),
                       IconButton(
                         iconSize: 30,
-                        icon: Icon(Icons.delete, color: isDarkMode ? Colors.redAccent : Colors.red),
+                        icon: Icon(PhosphorIconsBold.trash, color: isDarkMode ? Colors.redAccent : Colors.red),
                         tooltip: 'Delete Task',
                         onPressed: () => _deleteTask(task['id']),
                       ),
@@ -783,13 +770,13 @@ class _TaskScreenState extends State<TaskScreen> with SingleTickerProviderStateM
             unselectedLabelColor: Colors.grey,
             labelStyle: const TextStyle(fontWeight: FontWeight.bold),
             tabs: const [
-              Tab(text: 'Pending Tasks', icon: Icon(Icons.format_list_bulleted_outlined)),
-              Tab(text: 'Completed Tasks', icon: Icon(Icons.check_circle)),
+              Tab(text: 'Pending Tasks', icon: Icon(PhosphorIconsBold.listChecks)),
+              Tab(text: 'Completed Tasks', icon: Icon(PhosphorIconsBold.checkCircle)),
             ],
           ),
           actions: [
             IconButton(
-              icon: const Icon(Icons.search),
+              icon: const Icon(PhosphorIconsBold.magnifyingGlass),
               tooltip: 'Search Tasks',
               onPressed: () async {
                 final selectedTask = await showSearch<Map<String, dynamic>?>(
@@ -808,7 +795,7 @@ class _TaskScreenState extends State<TaskScreen> with SingleTickerProviderStateM
             Padding(
               padding: const EdgeInsets.only(right: 16.0), // Add margin from the right
               child: IconButton(
-                icon: const Icon(Icons.add),
+                icon: const Icon(PhosphorIconsBold.plusCircle),
                 tooltip: 'Add Task',
                 onPressed: () => _showTaskDialog(),
               ),

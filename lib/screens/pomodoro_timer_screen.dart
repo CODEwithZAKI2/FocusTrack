@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart'; // Import audioplayers
 import '../database/database_helper.dart';
 import 'package:motion_toast/motion_toast.dart'; // Import Motion Toast
+import 'package:phosphor_flutter/phosphor_flutter.dart'; // <-- Add this import for beautiful icons
 
 class PomodoroTimerScreen extends StatefulWidget {
   final int taskId; // Link the timer to a specific task
@@ -145,7 +146,27 @@ class _PomodoroTimerScreenState extends State<PomodoroTimerScreen> with SingleTi
 
   @override
   Widget build(BuildContext context) {
-    final progress = 1 - (_remainingTime / _totalTime); // Calculate progress for the circular indicator
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final navBg = isDark ? const Color(0xFF232336) : Colors.white;
+    final navActive = isDark ? Colors.deepPurpleAccent : Colors.deepPurple;
+    final navInactive = isDark ? Colors.white70 : Colors.deepPurple.shade200;
+    final navShadow = isDark
+        ? [
+            BoxShadow(
+              color: Colors.deepPurple.withOpacity(0.18),
+              blurRadius: 24,
+              offset: const Offset(0, -8),
+            ),
+          ]
+        : [
+            BoxShadow(
+              color: Colors.deepPurple.withOpacity(0.07),
+              blurRadius: 16,
+              offset: const Offset(0, -2),
+            ),
+          ];
+
+    int _selectedIndex = 0; // Tasks tab
 
     return WillPopScope(
       onWillPop: () async {
@@ -178,7 +199,7 @@ class _PomodoroTimerScreenState extends State<PomodoroTimerScreen> with SingleTi
                     width: 200,
                     height: 200,
                     child: CircularProgressIndicator(
-                      value: progress,
+                      value: 1 - (_remainingTime / _totalTime),
                       strokeWidth: 8,
                       backgroundColor: Colors.grey[300],
                       valueColor: AlwaysStoppedAnimation<Color>(
@@ -238,7 +259,55 @@ class _PomodoroTimerScreenState extends State<PomodoroTimerScreen> with SingleTi
             ],
           ),
         ),
-              ),
+        bottomNavigationBar: Container(
+          decoration: BoxDecoration(
+            color: navBg,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+            boxShadow: navShadow,
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+          child: SafeArea(
+            top: false,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _NavBarItem(
+                  icon: PhosphorIconsBold.checkCircle,
+                  label: "Tasks",
+                  selected: _selectedIndex == 0,
+                  onTap: () => Navigator.of(context).pushReplacementNamed('/home'),
+                  activeColor: navActive,
+                  inactiveColor: navInactive,
+                ),
+                _NavBarItem(
+                  icon: PhosphorIconsBold.bookBookmark,
+                  label: "Journal",
+                  selected: _selectedIndex == 1,
+                  onTap: () => Navigator.of(context).pushReplacementNamed('/home'),
+                  activeColor: navActive,
+                  inactiveColor: navInactive,
+                ),
+                _NavBarItem(
+                  icon: PhosphorIconsBold.chartBar,
+                  label: "Dashboard",
+                  selected: _selectedIndex == 2,
+                  onTap: () => Navigator.of(context).pushReplacementNamed('/home'),
+                  activeColor: navActive,
+                  inactiveColor: navInactive,
+                ),
+                _NavBarItem(
+                  icon: PhosphorIconsBold.userCircle,
+                  label: "Profile",
+                  selected: _selectedIndex == 3,
+                  onTap: () => Navigator.of(context).pushReplacementNamed('/home'),
+                  activeColor: navActive,
+                  inactiveColor: navInactive,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -310,5 +379,73 @@ class _PomodoroTimerScreenState extends State<PomodoroTimerScreen> with SingleTi
     } catch (e) {
       debugPrint('Error saving distraction log: $e');
     }
+  }
+}
+
+class _NavBarItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  final Color activeColor;
+  final Color inactiveColor;
+
+  const _NavBarItem({
+    required this.icon,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+    required this.activeColor,
+    required this.inactiveColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOutCubic,
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+          decoration: BoxDecoration(
+            color: selected ? activeColor.withOpacity(0.08) : Colors.transparent,
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: selected ? 30 : 26,
+                color: selected ? activeColor : inactiveColor,
+              ),
+              const SizedBox(height: 4),
+              AnimatedDefaultTextStyle(
+                duration: const Duration(milliseconds: 200),
+                style: TextStyle(
+                  fontSize: selected ? 14 : 12,
+                  fontWeight: selected ? FontWeight.bold : FontWeight.w500,
+                  color: selected ? activeColor : inactiveColor,
+                  letterSpacing: 0.1,
+                ),
+                child: Text(label),
+              ),
+              if (selected)
+                Container(
+                  margin: const EdgeInsets.only(top: 4),
+                  height: 3,
+                  width: 18,
+                  decoration: BoxDecoration(
+                    color: activeColor,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
