@@ -611,6 +611,31 @@ class _TaskScreenState extends State<TaskScreen> with SingleTickerProviderStateM
                             ),
                           ),
                         ),
+                        const SizedBox(width: 12),
+                        OutlinedButton.icon(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            _showTaskDialog(
+                              id: task['id'],
+                              currentTitle: task['title'],
+                              currentDescription: task['description'],
+                            );
+                          },
+                          icon: Icon(Icons.edit, color: isDarkMode ? Colors.deepPurple.shade100 : Colors.deepPurple),
+                          label: Text(
+                            "Edit",
+                            style: TextStyle(
+                              color: isDarkMode ? Colors.deepPurple.shade100 : Colors.deepPurple,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(color: isDarkMode ? Colors.deepPurple.shade900 : Colors.deepPurple.shade100),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                            backgroundColor: isDarkMode ? Colors.deepPurple.shade900.withOpacity(0.08) : null,
+                          ),
+                        ),
                       ],
                     ),
                   ],
