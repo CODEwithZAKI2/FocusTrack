@@ -549,7 +549,7 @@ class _TaskScreenState extends State<TaskScreen> with SingleTickerProviderStateM
               duration: const Duration(milliseconds: 300),
               decoration: BoxDecoration(
                 color: Theme.of(context).brightness == Brightness.dark
-                              ? Colors.black // Dark mode color
+                              ? const Color(0xFF181824) // Dark mode color
                               : backgroundColor,
                 borderRadius: BorderRadius.circular(16),
               ),

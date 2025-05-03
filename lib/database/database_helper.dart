@@ -75,7 +75,8 @@ class DatabaseHelper {
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             title TEXT NOT NULL,
             content TEXT NOT NULL,
-            timestamp TEXT NOT NULL
+            timestamp TEXT NOT NULL,
+            mood TEXT
           )
         ''');
       },
@@ -91,9 +92,17 @@ class DatabaseHelper {
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 title TEXT NOT NULL,
                 content TEXT NOT NULL,
-                timestamp TEXT NOT NULL
+                timestamp TEXT NOT NULL,
+                mood TEXT
               )
             ''');
+          } else {
+            // Add mood column to journal_entries if it doesn't exist
+            final journalColumns = await db.rawQuery('PRAGMA table_info(journal_entries)');
+            final hasMood = journalColumns.any((col) => col['name'] == 'mood');
+            if (!hasMood) {
+              await db.execute('ALTER TABLE journal_entries ADD COLUMN mood TEXT;');
+            }
           }
         }
       },
