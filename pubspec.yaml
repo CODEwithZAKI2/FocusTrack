@@ -47,6 +47,7 @@ dependencies:
   motion_toast: ^2.12.1
   curved_navigation_bar: ^1.0.6
   phosphor_flutter: ^2.1.0
+  flutter_local_notifications: ^19.1.0
 
 dev_dependencies:
   flutter_test:

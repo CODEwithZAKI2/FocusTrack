@@ -4,6 +4,7 @@ import 'package:audioplayers/audioplayers.dart'; // Import audioplayers
 import '../database/database_helper.dart';
 import 'package:motion_toast/motion_toast.dart'; // Import Motion Toast
 import 'package:phosphor_flutter/phosphor_flutter.dart'; // <-- Add this import for beautiful icons
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class PomodoroTimerScreen extends StatefulWidget {
   final int taskId; // Link the timer to a specific task
@@ -29,6 +30,9 @@ class _PomodoroTimerScreenState extends State<PomodoroTimerScreen> with SingleTi
   final TextEditingController _workDurationController = TextEditingController();
   final TextEditingController _breakDurationController = TextEditingController();
 
+  // Add local notifications plugin
+  final FlutterLocalNotificationsPlugin _localNotifications = FlutterLocalNotificationsPlugin();
+
   @override
   void initState() {
     super.initState();
@@ -39,6 +43,20 @@ class _PomodoroTimerScreenState extends State<PomodoroTimerScreen> with SingleTi
 
     _workDurationController.text = (_workDuration ~/ 60).toString(); // Default in minutes
     _breakDurationController.text = (_breakDuration ~/ 60).toString(); // Default in minutes
+
+    // Fix for MissingPluginException: ensure plugin registration is complete
+    // Only call this after a full restart, not hot reload!
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _initializeNotifications();
+    });
+  }
+
+  Future<void> _initializeNotifications() async {
+    // Register the custom notification icon
+    const AndroidInitializationSettings androidInit =
+        AndroidInitializationSettings('app_icon'); // Use 'app_icon' (without extension)
+    const InitializationSettings initSettings = InitializationSettings(android: androidInit);
+    await _localNotifications.initialize(initSettings);
   }
 
   void _startTimer() {
@@ -52,15 +70,121 @@ class _PomodoroTimerScreenState extends State<PomodoroTimerScreen> with SingleTi
           _remainingTime--;
         });
 
-        // Play a short beep during the last 5 seconds
+        // Show in-app and phone notification during the last 5 seconds
         if (_remainingTime <= 5 && _remainingTime > 0) {
-          await _audioPlayer.play(AssetSource('sounds/short_beep.mp3')); // Short beep sound
+          final taskTitle = await _getTaskTitle();
+          _showInAppNotification(
+            title: "Pomodoro Ending Soon",
+            message: "Task: $taskTitle • ${_remainingTime}s left. Stay focused!",
+            icon: PhosphorIconsBold.timer,
+            color: Colors.deepPurple,
+          );
+          _showOuterNotification(
+            title: "Pomodoro Ending Soon",
+            body: "Task: $taskTitle • ${_remainingTime}s left. Stay focused!",
+          );
         }
       } else {
         _timer!.cancel();
         await _audioPlayer.play(AssetSource('sounds/long_beep.mp3')); // Long beep sound
         _onSessionComplete();
       }
+    });
+  }
+
+  // Show notification in the phone notification bar
+  Future<void> _showOuterNotification({required String title, required String body}) async {
+    const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+      'pomodoro_channel',
+      'Pomodoro Notifications',
+      channelDescription: 'Notifications for Pomodoro timer events',
+      importance: Importance.max,
+      priority: Priority.high,
+      ticker: 'ticker',
+      icon: 'app_icon', // Use your custom icon
+    );
+    const NotificationDetails platformDetails = NotificationDetails(android: androidDetails);
+    await _localNotifications.show(
+      0,
+      title,
+      body,
+      platformDetails,
+    );
+  }
+
+  // Helper to get the task title from DB
+  Future<String> _getTaskTitle() async {
+    final db = await DatabaseHelper().database;
+    final result = await db?.query('tasks', where: 'id = ?', whereArgs: [widget.taskId]);
+    if (result != null && result.isNotEmpty) {
+      return result.first['title']?.toString() ?? 'Task';
+    }
+    return 'Task';
+  }
+
+  // In-app notification using a SnackBar (customizable)
+  void _showInAppNotification({
+    required String title,
+    required String message,
+    IconData? icon,
+    Color? color,
+  }) {
+    final overlay = Overlay.of(context);
+    final overlayEntry = OverlayEntry(
+      builder: (context) => Positioned(
+        top: MediaQuery.of(context).padding.top + 16,
+        left: 24,
+        right: 24,
+        child: Material(
+          color: Colors.transparent,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeOutCubic,
+            decoration: BoxDecoration(
+              color: color ?? Colors.deepPurple,
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: [
+                BoxShadow(
+                  color: (color ?? Colors.deepPurple).withAlpha((0.18 * 255).toInt()),
+                  blurRadius: 16,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+            child: Row(
+              children: [
+                if (icon != null)
+                  Icon(icon, color: Colors.white, size: 26),
+                if (icon != null) const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(title,
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15)),
+                      Text(message,
+                          style: const TextStyle(
+                              color: Colors.white70,
+                              fontWeight: FontWeight.w400,
+                              fontSize: 13)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    overlay.insert(overlayEntry);
+    Future.delayed(const Duration(seconds: 2), () {
+      overlayEntry.remove();
     });
   }
 
@@ -112,7 +236,7 @@ class _PomodoroTimerScreenState extends State<PomodoroTimerScreen> with SingleTi
         title: const Text('Session Saved'),
         description: const Text('Your work session has been saved successfully.'),
         animationType: AnimationType.slideInFromTop,
-        position: MotionToastPosition.top,
+        toastAlignment: Alignment.topCenter,
       ).show(context);
     }
 
@@ -153,14 +277,14 @@ class _PomodoroTimerScreenState extends State<PomodoroTimerScreen> with SingleTi
     final navShadow = isDark
         ? [
             BoxShadow(
-              color: Colors.deepPurple.withOpacity(0.18),
+              color: Colors.deepPurple.withAlpha((0.18 * 255).toInt()),
               blurRadius: 24,
               offset: const Offset(0, -8),
             ),
           ]
         : [
             BoxShadow(
-              color: Colors.deepPurple.withOpacity(0.07),
+              color: Colors.deepPurple.withAlpha((0.07 * 255).toInt()),
               blurRadius: 16,
               offset: const Offset(0, -2),
             ),
@@ -168,24 +292,25 @@ class _PomodoroTimerScreenState extends State<PomodoroTimerScreen> with SingleTi
 
     int _selectedIndex = 0; // Tasks tab
 
-    return WillPopScope(
-      onWillPop: () async {
+    return PopScope(
+      canPop: true,
+      onPopInvoked: (didPop) async {
+        if (didPop) return;
         if (!_isWorkSession) {
-          // Allow navigation immediately if it's break time
-          return true;
+          Navigator.of(context).maybePop();
+          return;
         }
         if (_isRunning) {
-          _pauseTimer(); // Pause the timer
+          _pauseTimer();
         }
         if (_remainingTime > 0 && _totalTime != _remainingTime) {
-          // Show the distraction log modal only during work sessions
           final shouldClose = await _showDistractionLogModal();
-          return shouldClose; // Close the screen based on user response
+          if (shouldClose && mounted) Navigator.of(context).maybePop();
+        } else {
+          Navigator.of(context).maybePop();
         }
-        return true; // Allow navigation if the timer hasn't started
       },
       child: Scaffold(
-
         appBar: AppBar(
           centerTitle: true,
           backgroundColor: isDark ? Colors.grey[900] : Colors.white,
@@ -350,14 +475,15 @@ class _PomodoroTimerScreenState extends State<PomodoroTimerScreen> with SingleTi
                 final reason = distractionController.text.trim();
                 if (reason.isNotEmpty) {
                   await _saveDistractionLog(reason);
+                  if (!mounted) return;
                   MotionToast.success(
                     title: const Text('Distraction Logged'),
                     description: const Text('Your distraction has been logged successfully.'),
                     animationType: AnimationType.slideInFromTop,
-                    position: MotionToastPosition.top,
+                    toastAlignment: Alignment.topCenter,
                   ).show(context);
                 }
-                Navigator.pop(context, true); // Close the dialog and allow screen close
+                if (mounted) Navigator.pop(context, true); // Close the dialog and allow screen close
               },
               child: const Text('Save'),
             ),
@@ -413,7 +539,7 @@ class _NavBarItem extends StatelessWidget {
           curve: Curves.easeOutCubic,
           padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
           decoration: BoxDecoration(
-            color: selected ? activeColor.withOpacity(0.08) : Colors.transparent,
+            color: selected ? activeColor.withAlpha((0.08 * 255).toInt()) : Colors.transparent,
             borderRadius: BorderRadius.circular(18),
           ),
           child: Column(
