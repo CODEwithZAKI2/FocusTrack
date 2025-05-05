@@ -233,6 +233,7 @@ class _TaskScreenState extends State<TaskScreen> with SingleTickerProviderStateM
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Dismissible(
+      
       key: Key(task['id'].toString()), // Unique key for each task
       direction: isCompleted ? DismissDirection.none : DismissDirection.startToEnd, // Allow swipe only for pending tasks
       onDismissed: (direction) {
@@ -758,11 +759,14 @@ class _TaskScreenState extends State<TaskScreen> with SingleTickerProviderStateM
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return DefaultTabController(
       length: 2, // Two tabs: Pending and Completed
       child: Scaffold(
         appBar: AppBar(
+          backgroundColor: isDark ? Colors.grey[900] : Colors.white,
           title: const Text('Tasks'),
+          centerTitle: true,
           bottom: TabBar(
             controller: _tabController, // Use the manually created TabController
             indicatorColor: Colors.deepPurple,

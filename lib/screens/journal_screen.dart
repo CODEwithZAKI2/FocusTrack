@@ -328,6 +328,7 @@ class _JournalScreenState extends State<JournalScreen> {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
+        
         title: const Text('Journal'),
         elevation: 0,
         backgroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.grey[900] : Colors.white,

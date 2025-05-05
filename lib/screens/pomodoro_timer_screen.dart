@@ -185,7 +185,10 @@ class _PomodoroTimerScreenState extends State<PomodoroTimerScreen> with SingleTi
         return true; // Allow navigation if the timer hasn't started
       },
       child: Scaffold(
+
         appBar: AppBar(
+          centerTitle: true,
+          backgroundColor: isDark ? Colors.grey[900] : Colors.white,
           title: Text(_isWorkSession ? 'Work Session' : 'Break Session'),
         ),
         body: Center(

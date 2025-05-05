@@ -8,8 +8,11 @@ class ProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       appBar: AppBar(
+        centerTitle: true,
+        backgroundColor: isDark ? Colors.grey[900] : Colors.white,
         title: const Text('Profile'),
       ),
       body: FutureBuilder<Map<String, String>?>(

@@ -300,7 +300,7 @@ class _StatCard extends StatelessWidget {
               style: TextStyle(
                 color: color.withOpacity(0.8),
                 fontWeight: FontWeight.w500,
-                fontSize: 13,
+                fontSize: 16,
               ),
             ),
           ],
@@ -375,7 +375,7 @@ class _PomodoroTrendChart extends StatelessWidget {
                     Text(
                       days[i],
                       style: TextStyle(
-                        fontSize: 11,
+                        fontSize: 16,
                         color: barColor.withOpacity(counts[i] == 0 ? 0.4 : 1),
                         fontWeight: FontWeight.w600,
                       ),
@@ -384,7 +384,7 @@ class _PomodoroTrendChart extends StatelessWidget {
                       Text(
                         counts[i].toString(),
                         style: TextStyle(
-                          fontSize: 11,
+                          fontSize: 16,
                           color: barColor,
                           fontWeight: FontWeight.bold,
                         ),
@@ -460,7 +460,7 @@ class _MoodTrendChart extends StatelessWidget {
               const SizedBox(height: 2),
               Text(
                 DateFormat('E').format(date),
-                style: const TextStyle(fontSize: 11, color: Colors.deepPurple),
+                style: const TextStyle(fontSize: 16, color: Colors.deepPurple),
               ),
             ],
           );
@@ -490,7 +490,7 @@ class _DistractionPieChart extends StatelessWidget {
     ];
 
     final reasons = distractionReasons.entries.toList();
-    final double size = 120;
+    final double size = 140;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -509,38 +509,39 @@ class _DistractionPieChart extends StatelessWidget {
                   '$total',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: 22,
-                    color: isDark ? Colors.white : Colors.white,
+                    fontSize: 28,
+                    color: isDark ? Colors.white : Colors.deepPurple,
                   ),
                 ),
               ),
             ),
           ),
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 18),
         ...reasons.asMap().entries.map((entry) {
           final idx = entry.key;
           final e = entry.value;
           final percent = total == 0 ? 0 : (e.value / total * 100);
           return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 2),
+            padding: const EdgeInsets.symmetric(vertical: 4),
             child: Row(
               children: [
                 Container(
-                  width: 14,
-                  height: 14,
+                  width: 18,
+                  height: 18,
                   decoration: BoxDecoration(
                     color: pieColors[idx % pieColors.length],
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     e.key,
                     style: TextStyle(
                       color: isDark ? Colors.deepPurple.shade100 : Colors.deepPurple.shade700,
                       fontWeight: FontWeight.w600,
+                      fontSize: 16,
                     ),
                   ),
                 ),
@@ -548,7 +549,8 @@ class _DistractionPieChart extends StatelessWidget {
                   '${e.value} (${percent.toStringAsFixed(1)}%)',
                   style: TextStyle(
                     color: isDark ? Colors.deepPurple.shade100 : Colors.deepPurple.shade700,
-                    fontWeight: FontWeight.w400,
+                    fontWeight: FontWeight.w500,
+                    fontSize: 15,
                   ),
                 ),
               ],
