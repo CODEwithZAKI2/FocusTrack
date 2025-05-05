@@ -4,6 +4,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:provider/provider.dart'; // Import Provider
 import 'package:intl/intl.dart'; // Import for date formatting
 import 'package:motion_toast/motion_toast.dart'; // Import Motion Toast
+import 'dart:math'; // Add this import for random color
 import '../database/database_helper.dart';
 import 'pomodoro_timer_screen.dart'; // Import PomodoroTimerScreen
 
@@ -68,6 +69,38 @@ class _TaskScreenState extends State<TaskScreen> with SingleTickerProviderStateM
   List<Map<String, dynamic>> _completedTasks = [];
   Map<int, List<Map<String, dynamic>>> _pomodoroSessions = {}; // Map task ID to its Pomodoro sessions
   late TabController _tabController;
+
+  // Add a color palette for beautiful task backgrounds
+  final List<List<Color>> _lightGradients = [
+    [Color(0xFFE0E7FF), Color(0xFFF3F0FF)], // original
+    [Color(0xFFFFF1EB), Color(0xFFFFE4E1)],
+    [Color(0xFFE0FFF7), Color(0xFFB2F7EF)],
+    [Color(0xFFFFF9E5), Color(0xFFFFE7C7)],
+    [Color(0xFFE6F0FF), Color(0xFFD0E6FF)],
+    [Color(0xFFFDEBFF), Color(0xFFE9D6FE)],
+    [Color(0xFFE8F5E9), Color(0xFFC8E6C9)],
+    [Color(0xFFFFF3E0), Color(0xFFFFE0B2)],
+    [Color(0xFFF1F8E9), Color(0xFFDCEDC8)],
+    [Color(0xFFE3F2FD), Color(0xFFBBDEFB)],
+  ];
+
+  final List<List<Color>> _darkGradients = [
+    [Color(0xFF232336), Color(0xFF181824)], // original dark
+    [Color(0xFF2D2D3A), Color(0xFF232336)],
+    [Color(0xFF232336), Color(0xFF2B2B3C)],
+    [Color(0xFF232336), Color(0xFF3A2D3A)],
+    [Color(0xFF232336), Color(0xFF2D3A3A)],
+    [Color(0xFF232336), Color(0xFF3A3A2D)],
+    [Color(0xFF232336), Color(0xFF3A2D2D)],
+    [Color(0xFF232336), Color(0xFF2D2D3A)],
+    [Color(0xFF232336), Color(0xFF2D3A2D)],
+    [Color(0xFF232336), Color(0xFF2D3A39)],
+  ];
+
+  final Random _random = Random();
+
+  // Store a random gradient index for each task id
+  final Map<int, int> _taskGradientIndex = {};
 
   @override
   void initState() {
@@ -230,118 +263,313 @@ class _TaskScreenState extends State<TaskScreen> with SingleTickerProviderStateM
   }
 
   Widget _buildTaskCard(Map<String, dynamic> task, bool isCompleted) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final createdAt = DateTime.tryParse(task['created_at'] ?? '') ?? DateTime.now();
+    final pomodoros = _pomodoroSessions[task['id']]?.length ?? 0;
+    final distractions = (task['distractions'] as List?)?.length ?? 0;
+
+    // Assign or retrieve a random gradient index for this task
+    int gradientIdx;
+    if (_taskGradientIndex.containsKey(task['id'])) {
+      gradientIdx = _taskGradientIndex[task['id']]!;
+    } else {
+      gradientIdx = _random.nextInt(_lightGradients.length);
+      _taskGradientIndex[task['id']] = gradientIdx;
+    }
+
+    final List<Color> gradientColors = isDark
+        ? _darkGradients[gradientIdx % _darkGradients.length]
+        : _lightGradients[gradientIdx % _lightGradients.length];
 
     return Dismissible(
-      
-      key: Key(task['id'].toString()), // Unique key for each task
-      direction: isCompleted ? DismissDirection.none : DismissDirection.startToEnd, // Allow swipe only for pending tasks
+      key: Key(task['id'].toString()),
+      direction: isCompleted
+          ? DismissDirection.none
+          : DismissDirection.horizontal, // Allow both directions for pending
       onDismissed: (direction) {
-        _toggleTaskStatus(task['id'], true); // Mark as completed
+        if (direction == DismissDirection.endToStart) {
+          // Swipe right-to-left: delete
+          _deleteTask(task['id']);
+        } else if (direction == DismissDirection.startToEnd) {
+          // Swipe left-to-right: complete
+          _toggleTaskStatus(task['id'], true);
+        }
       },
       background: Container(
+        alignment: Alignment.centerLeft,
+        padding: const EdgeInsets.symmetric(horizontal: 28.0),
+        decoration: BoxDecoration(
+          color: Colors.green,
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: const Icon(Icons.check, color: Colors.white, size: 36),
+      ),
+      secondaryBackground: Container(
         alignment: Alignment.centerRight,
-        padding: const EdgeInsets.symmetric(horizontal: 20.0),
-        color: Colors.green, // Background color for swipe action
-        child: const Icon(Icons.check, color: Colors.white, size: 30), // Check icon
+        padding: const EdgeInsets.symmetric(horizontal: 28.0),
+        decoration: BoxDecoration(
+          color: Colors.red,
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: const Icon(Icons.delete, color: Colors.white, size: 36),
       ),
       child: GestureDetector(
-        onTap: () => _showTaskDetailsBottomSheet(task), // Show bottom sheet on tap
+        onTap: () => _showTaskDetailsBottomSheet(task),
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
-          margin: const EdgeInsets.symmetric(vertical: 8),
+          duration: const Duration(milliseconds: 350),
+          margin: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
             gradient: isCompleted
-                ? null // No gradient for completed tasks
-                : isDarkMode
-                    ? null // No gradient in dark mode
-                    : const LinearGradient( // Gradient for pending tasks in light mode
-                        colors: [Color(0xFFB3E5FC), Color(0xFF81D4FA)], // Light blue gradient
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-            color: isDarkMode
-                ? Colors.black // Dark mode: Use black for both pending and completed tasks
-                : (isCompleted
-                    ? Colors.green[100] // Light mode: Use original green color for completed tasks
-                    : null), // Gradient already applied for pending tasks in light mode
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: isDarkMode
-                ? [
-                  BoxShadow(
-                      color: Colors.red.withOpacity(0.5),
-                      blurRadius: 6,
-                      offset: const Offset(0, 3),
-                    ),
-                ] // Red shadow in dark mode
-                : [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 6,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
+                ? null
+                : LinearGradient(
+                    colors: gradientColors,
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+            color: isDark
+                ? (isCompleted ? Colors.green.shade900.withOpacity(0.18) : null)
+                : (isCompleted ? Colors.green.shade50 : null),
+            borderRadius: BorderRadius.circular(22),
+            boxShadow: [
+              if (!isDark)
+                BoxShadow(
+                  color: gradientColors.first.withOpacity(0.10),
+                  blurRadius: 16,
+                  offset: const Offset(0, 8),
+                ),
+              if (isDark)
+                BoxShadow(
+                  color: gradientColors.first.withOpacity(0.13),
+                  blurRadius: 18,
+                  offset: const Offset(0, 4),
+                ),
+            ],
+            border: Border.all(
+              color: isCompleted
+                  ? (isDark ? Colors.greenAccent.withOpacity(0.18) : Colors.green.shade100)
+                  : (isDark ? gradientColors.first.withOpacity(0.18) : gradientColors.first.withOpacity(0.18)),
+              width: 1.2,
+            ),
           ),
           child: Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(
-                  isCompleted ? Icons.check_circle : Icons.radio_button_unchecked,
-                  color: isCompleted
-                      ? (isDarkMode ? Colors.greenAccent : Colors.green)
-                      : (isDarkMode ? Colors.blueAccent : Colors.blue),
+                // Status Icon
+                Container(
+                  decoration: BoxDecoration(
+                    color: isCompleted
+                        ? (isDark ? Colors.greenAccent.withOpacity(0.13) : Colors.green.shade100)
+                        : (isDark ? Colors.deepPurple.shade900 : Colors.deepPurple.shade100),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  padding: const EdgeInsets.all(12),
+                  child: Icon(
+                    isCompleted ? Icons.check_circle_rounded : Icons.radio_button_unchecked,
+                    color: isCompleted
+                        ? (isDark ? Colors.greenAccent : Colors.green)
+                        : (isDark ? Colors.deepPurpleAccent : Colors.deepPurple),
+                    size: 32,
+                  ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 18),
+                // Main Content
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        task['title'],
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 18,
-                          color: isDarkMode ? Colors.white : Colors.black87,
-                        ),
+                      // Title Row
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              task['title'],
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 20,
+                                color: isDark
+                                    ? (isCompleted ? Colors.greenAccent : Colors.deepPurple.shade100)
+                                    : (isCompleted ? Colors.green.shade700 : Colors.deepPurple.shade700),
+                                letterSpacing: 0.1,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          
+                        ],
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        task['description'] ?? '',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w400,
-                          fontSize: 16,
-                          color: isDarkMode ? Colors.white70 : Colors.black54,
+                      const SizedBox(height: 6),
+                      // Description
+                      if ((task['description'] ?? '').toString().isNotEmpty)
+                        Text(
+                          task['description'],
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: isDark
+                                ? Colors.white70
+                                : Colors.deepPurple.shade400,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
+                      const SizedBox(height: 10),
+                      // Info Row
+                      Row(
+                        children: [
+                          Icon(Icons.calendar_today_rounded, size: 19, color: Colors.deepPurple.shade200),
+                          const SizedBox(width: 4),
+                          Text(
+                            DateFormat('MMM d, yyyy').format(createdAt),
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: isDark ? Colors.deepPurple.shade200 : Colors.deepPurple.shade400,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          Icon(Icons.access_time_rounded, size: 19, color: Colors.deepPurple.shade200),
+                          const SizedBox(width: 4),
+                          Text(
+                            DateFormat('h:mm a').format(createdAt),
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: isDark ? Colors.deepPurple.shade200 : Colors.deepPurple.shade400,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          if (distractions > 0) ...[
+                            const SizedBox(width: 14),
+                            Icon(Icons.error_outline, size: 19, color: Colors.redAccent),
+                            const SizedBox(width: 4),
+                            Text(
+                              '$distractions',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.redAccent,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                          if (!isCompleted)
+                            Container(
+                              margin: const EdgeInsets.only(left: 8),
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: isDark
+                                    ? Colors.deepPurple.shade900.withOpacity(0.18)
+                                    : Colors.deepPurple.shade50,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(PhosphorIconsBold.timer, size: 19, color: Colors.deepPurple),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '$pomodoros',
+                                    style: TextStyle(
+                                      color: Colors.deepPurple,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                        ],
                       ),
+                      if (isCompleted)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 10),
+                          child: Row(
+                            children: [
+                              Icon(Icons.verified_rounded, size: 18, color: Colors.green),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Completed',
+                                style: TextStyle(
+                                  color: Colors.green,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      if (!isCompleted)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 18.0, bottom: 8.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              GestureDetector(
+                                onTap: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => Scaffold(
+                                      body: PomodoroTimerScreen(taskId: task['id']),
+                                    ),
+                                  ),
+                                ).then((_) => _loadTasks()),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: isDark
+                                          ? [Colors.greenAccent.withOpacity(0.22), Colors.green.withOpacity(0.18)]
+                                          : [Colors.green.shade100, Colors.green.shade200],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    ),
+                                    borderRadius: BorderRadius.circular(16),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: isDark
+                                            ? Colors.greenAccent.withOpacity(0.10)
+                                            : Colors.green.withOpacity(0.13),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                    border: Border.all(
+                                      color: isDark
+                                          ? Colors.greenAccent.withOpacity(0.25)
+                                          : Colors.green.shade300,
+                                      width: 1.2,
+                                    ),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        PhosphorIconsBold.timer,
+                                        color: isDark ? Colors.greenAccent : Colors.green.shade700,
+                                        size: 32,
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Text(
+                                        'Start Pomodoro',
+                                        style: TextStyle(
+                                          color: isDark ? Colors.greenAccent : Colors.green.shade700,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16,
+                                          letterSpacing: 0.2,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                     ],
                   ),
                 ),
-                if (!isCompleted) // Show delete and timer icons only for pending tasks
-                  Row(
-                    children: [
-                      IconButton(
-                        iconSize: 30,
-                        icon: Icon(PhosphorIconsBold.timer, color: isDarkMode ? Colors.greenAccent : Colors.green),
-                        tooltip: 'Start Pomodoro Timer',
-                        onPressed: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => Scaffold(
-                              body: PomodoroTimerScreen(taskId: task['id']),
-                              
-                            ),
-                          ),
-                        ).then((_) => _loadTasks()),
-                      ),
-                      IconButton(
-                        iconSize: 30,
-                        icon: Icon(PhosphorIconsBold.trash, color: isDarkMode ? Colors.redAccent : Colors.red),
-                        tooltip: 'Delete Task',
-                        onPressed: () => _deleteTask(task['id']),
-                      ),
-                    ],
-                  ),
+                // Actions
+                
               ],
             ),
           ),
