@@ -1,5 +1,6 @@
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:flutter/material.dart';
+import 'package:taskflow/screens/dashboard_screen.dart';
 import 'package:taskflow/screens/journal_screen.dart';
 import 'package:taskflow/screens/profile_screen.dart';
 import '../main.dart'; // Import MyApp to access the themeNotifier
@@ -21,7 +22,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final List<Widget> _screens = [
     const TaskScreen(userId: ''), // Placeholder for TaskScreen
     const JournalScreen(), // Placeholder for Journal
-    Center(child: Text('Dashboards')), // Placeholder for Dashboards
+    const DashboardScreen(), // Use the new DashboardScreen here
     const ProfileScreen(), // Placeholder for Profile
   ];
 
